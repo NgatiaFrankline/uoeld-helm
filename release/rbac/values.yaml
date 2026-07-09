@@ -1,0 +1,143 @@
+# RBAC bindings that map Keycloak groups to Kubernetes roles.
+#
+# How it works:
+#   1. Keycloak sends a "groups" claim in the OIDC token (e.g. ["/k8s-admins"])
+#   2. The K8s API server must be started with:
+#        --oidc-issuer-url=https://sso.uoeld.ac.ke/realms/uoe
+#        --oidc-client-id=headlamp
+#        --oidc-username-claim=email
+#        --oidc-groups-claim=groups
+#        --oidc-groups-prefix=
+#   3. ClusterRoleBindings grant cluster-wide access.
+#      RoleBindings grant access restricted to a specific namespace.
+#
+# Keycloak setup:
+#   - Realm > Clients > headlamp > Client Scopes > add "groups" scope
+#   - Create groups: k8s-admins, k8s-editors, k8s-viewers, erp-viewers, finance-editors
+#   - Assign users to groups via their email account
+
+rbac:
+  # Custom ClusterRoles to supplement built-in roles
+  customClusterRoles:
+    # Allows any authenticated user to read node/pod metrics from metrics-server.
+    # The built-in 'view' role does not cover metrics.k8s.io, so Headlamp's
+    # node/pod metrics panels show Forbidden for non-admin users without this.
+    - name: metrics-viewer
+      labels:
+        rbac.authorization.k8s.io/aggregate-to-view: "true"  #Inherits view permissions
+      rules:
+        - apiGroups: ["metrics.k8s.io"]
+          resources: ["nodes", "pods"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: [""]
+          resources: ["nodes"]
+          verbs: ["get", "list", "watch"]
+
+###################### GROUP-BASED SCOPES #####################################
+
+#  # Bind a custom ClusterRole to a group cluster-wide
+#  customClusterBindings:
+#    - name: headlamp-metrics-viewers
+#      groupName: "/k8s-viewers"
+#      clusterRole: metrics-viewer
+#    - name: headlamp-metrics-editors
+#      groupName: "/k8s-editors"
+#      clusterRole: metrics-viewer
+
+#  # ClusterRoleBindings — cluster-wide access (no namespace restriction)
+#  clusterBindings:
+#    - name: headlamp-admins
+#      groupName: "/k8s-admins"
+#      clusterRole: cluster-admin
+#
+#    - name: headlamp-editors
+#      groupName: "/k8s-editors"
+#      # edit: create/update/delete most resources, no RBAC management
+#      clusterRole: edit
+#
+#    - name: headlamp-viewers
+#      groupName: "/k8s-viewers"
+#      # view: read-only access to all namespaces
+#      clusterRole: view
+#
+#  # RoleBindings — namespace-scoped access.
+#  # A RoleBinding can reference a ClusterRole (to reuse its rules) but applies
+#  # only within the specified namespace. The group sees ONLY that namespace.
+#  namespaceBindings:
+#    - name: core-editors
+#      groupName: "/core-editors"
+#      # referencing a built-in ClusterRole is fine; the RoleBinding scopes it
+#      clusterRole: edit
+#      namespace: core
+#
+#    - name: sf-editors
+#      groupName: "/sf-editors"
+#      clusterRole: edit
+#      namespace: sf
+#
+#    - name: admissions-editors
+#      groupName: "/admissions-editors"
+#      clusterRole: edit
+#      namespace: admissions
+#
+#    - name: hostels-editors
+#      groupName: "/hostels-editors"
+#      clusterRole: edit
+#      namespace: hostels
+
+###################### USER-BASED SCOPES #####################################
+
+  # ClusterRoleBindings for individual users — cluster-wide access
+  userClusterBindings:
+    - name: headlamp-cluster-fngatia
+      userName: "fngatia@uoeld.ac.ke"
+      clusterRole: cluster-admin
+    - name: headlamp-cluster-slizzyjr
+      userName: "jslater@uoeld.ac.ke"
+      clusterRole: view
+    - name: headlamp-cluster-sthaiya
+      userName: "sthaiya@uoeld.ac.ke"
+      clusterRole: view
+    - name: headlamp-cluster-ebra
+      userName: "ebrahimkirwa@uoeld.ac.ke"
+      clusterRole: view
+  # RoleBindings for individual users — namespace-scoped access
+  userNamespaceBindings:
+    - name: headlamp-ns-slizzyjr-0
+      userName: "jslater@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: admissions
+    - name: headlamp-ns-slizzyjr-1
+      userName: "jslater@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: admissions-train
+    - name: headlamp-ns-slizzyjr-2
+      userName: "jslater@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: train-galera
+
+    - name: headlamp-ns-sthaiya-0
+      userName: "sthaiya@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: core
+    - name: headlamp-ns-sthaiya-1
+      userName: "sthaiya@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: core-train
+    - name: headlamp-ns-sthaiya-2
+      userName: "sthaiya@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: train-galera
+
+    - name: headlamp-ns-ebra-0
+      userName: "ebrahimkirwa@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: sf
+    - name: headlamp-ns-ebra-1
+      userName: "ebrahimkirwa@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: sf-train
+    - name: headlamp-ns-ebra-2
+      userName: "ebrahimkirwa@uoeld.ac.ke"
+      clusterRole: edit
+      namespace: train-galera

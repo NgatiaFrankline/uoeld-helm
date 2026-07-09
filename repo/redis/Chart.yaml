@@ -1,0 +1,5 @@
+apiVersion: v2
+name: redis
+description: Highly available Redis setup with separate queue and cache roles.
+type: application
+version: 0.1.0

@@ -1,0 +1,38 @@
+enabled: true
+replicas: 1
+image: docker.io/uoewebmaster/uoeerp:rsync-v1
+addImagePullSecretsManifest: true
+nodeSelector:
+  selectorKey: backup
+  selectorValue: scheduled
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+env:
+  remoteUser: dngatia
+  remoteHost: 41.89.169.125
+  remotePort: "9125"
+  remoteDir: /backup/student-finance/
+  localDir: /data/
+  cronTime: "0 */6 * * *"
+storage:
+  rsyncSshPV: ""
+  type: pvc
+#  type: hostPath
+  pvcName: "example-pvc"
+  hostPathUri: "/example-host-path"
+rsyncExclude: |
+  .git/
+  .github/
+  node_modules/
+  vendor/
+  *.log
+  .env
+  .env.*
+  storage/logs/
+  tmp/
+  cache/

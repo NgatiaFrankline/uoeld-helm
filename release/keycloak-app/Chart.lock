@@ -1,0 +1,9 @@
+dependencies:
+- name: keycloak
+  repository: file://../../repo/keycloak
+  version: 0.1.0
+- name: cert-manager
+  repository: file://../../repo/cert-manager
+  version: 0.1.0
+digest: sha256:5c53b5dc92298d7f3b4e73bbb757f80c58f77a985fc9ce52814676edd98994da
+generated: "2026-06-12T03:19:00.861892128+03:00"

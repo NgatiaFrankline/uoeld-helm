@@ -1,0 +1,55 @@
+nginx-ingress:
+  crds:
+    enabled: true
+
+  controller:
+    kind: daemonset
+
+    # Use host network so the controller binds directly to node ports 80/443
+    # (matches live deployment: hostNetwork=true, service.create=false)
+    hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet   # required when hostNetwork=true
+
+    # No Kubernetes Service needed — traffic arrives via host network
+    service:
+      create: false
+
+    # Feature flags — use chart's dedicated fields, not extraArgs
+    enableSnippets: true
+    enableCustomResources: true         # required by enableTLSPassthrough and enableCertManager
+    enableTLSPassthrough: true
+    enableCertManager: true
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 4
+        memory: 4Gi
+
+    # Global nginx defaults — matches live deployment config entries
+    config:
+      entries:
+        client_max_body_size: 100m
+        proxy_read_timeout: 600s
+        proxy_send_timeout: 600s
+        keepalive: "120"
+        keepalive_requests: "1000"
+        keepalive_timeout: "65"
+        proxy_buffer_size: 16k
+        proxy_buffers: 8 16k
+        use-http2: "true"
+        worker_connections: "16384"
+        worker_processes: auto
+        worker_rlimit_nofile: "1048576"
+
+  # Expose /metrics on port 9113 for kube-prometheus-stack
+  prometheus:
+    create: true
+    port: 9113
+    scheme: http
+    service:
+      create: true
+    serviceMonitor:
+      create: true

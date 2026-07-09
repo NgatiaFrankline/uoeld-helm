@@ -1,0 +1,15 @@
+image: docker.io/uoewebmaster/uoeerp:redis-v7
+addImagePullSecretsManifest: true
+nodeSelector:
+  selectorKey: redis
+  selectorValue: scheduled
+storage:
+  hostPath: /redis-data
+queue:
+  port: 1200
+  maxmemory: 2gb
+  appendonly: true
+cache:
+  port: 1300
+  maxmemory: 1gb
+  appendonly: false

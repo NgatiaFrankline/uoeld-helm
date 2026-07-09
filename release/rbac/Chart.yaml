@@ -1,0 +1,5 @@
+apiVersion: v2
+name: rbac
+description: A Helm chart for Kubernetes RBAC — maps Keycloak groups to K8s roles for Headlamp users
+type: application
+version: 0.1.0

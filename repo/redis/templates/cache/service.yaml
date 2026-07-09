@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cache-headless-svc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis-cache-app
+spec:
+  clusterIP: None
+  ports:
+    - name: client
+      port: {{ .Values.cache.port }}
+      targetPort: client
+      protocol: TCP
+  selector:
+    app: redis-cache-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cache-svc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis-cache-app
+spec:
+  type: ClusterIP
+  ports:
+    - name: client
+      port: {{ .Values.cache.port }}
+      targetPort: client
+      protocol: TCP
+  selector:
+    app: redis-cache-app

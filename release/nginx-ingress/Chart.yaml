@@ -1,0 +1,10 @@
+apiVersion: v2
+name: nginx-ingress
+description: A Helm chart for Kubernetes to deploy nginx ingress controller
+type: application
+version: 0.1.0
+dependencies:
+  - name: nginx-ingress
+    version: 2.6.1
+    repository: oci://ghcr.io/nginx/charts
+

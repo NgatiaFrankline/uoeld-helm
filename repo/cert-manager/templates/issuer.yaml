@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .Release.Namespace }}-tls-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  acme:
+    {{- $acmeServer := .Values.acme.liveServer }}
+    {{- if .Values.acme.staging }}
+    {{- $acmeServer = .Values.acme.stagingServer }}
+    {{- end }}
+    server: {{ $acmeServer }}
+    email: {{ .Values.acme.email }}
+    privateKeySecretRef:
+      name: {{ .Release.Namespace }}-tls-private-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx

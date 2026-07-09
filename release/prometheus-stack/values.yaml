@@ -1,0 +1,100 @@
+kube-prometheus-stack:
+  # ── Grafana ────────────────────────────────────────────────────────────────
+  grafana:
+    enabled: true
+    adminPassword: "1ct1125%"   # change before deploying
+
+    # OIDC login via Keycloak
+    # Keycloak setup: Clients > Create > Client ID: grafana
+    #   Access Type: confidential, Valid Redirect URIs: https://grafana.uoeld.ac.ke/*
+    grafana.ini:
+      server:
+        domain: grafana.uoeld.ac.ke
+        root_url: https://grafana.uoeld.ac.ke
+      auth.generic_oauth:
+        enabled: false   # enable once domain is live and Keycloak redirect URI is configured
+        name: Keycloak
+        allow_sign_up: true
+        client_id: grafana
+        # The Secret key client_secret is mounted as env var GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET (Grafana auto-maps GF_* vars from secrets)
+        # Wait — envFromSecret mounts the secret key names directly as-is. The key in the secret should match the env var name:
+        # kubectl create secret generic grafana-oidc \
+        # --from-literal=GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=<your-keycloak-secret> \
+        # -n prometheus-stack
+        # Then $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET} in grafana.ini will be resolved at runtime. The secret never appears in your Helm values or git history.
+        client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET} # Check for script to create secret in project root file
+        scopes: "openid email profile roles"
+        auth_url: https://sso.uoeld.ac.ke/realms/uoe/protocol/openid-connect/auth
+        token_url: https://sso.uoeld.ac.ke/realms/uoe/protocol/openid-connect/token
+        api_url: https://sso.uoeld.ac.ke/realms/uoe/protocol/openid-connect/userinfo
+        role_attribute_path: "contains(roles[*], 'k8s-admins') && 'Admin' || contains(roles[*], 'k8s-editors') && 'Editor' || 'Viewer'"
+    # Load client_secret from a K8s Secret into the env var referenced above
+    # Create with: kubectl create secret generic grafana-oidc \
+    #   --from-literal=client_secret=<value> -n prometheus-stack
+    envFromSecret: grafana-oidc
+
+    service:
+      type: NodePort
+      nodePort: 30300
+    ingress:
+      enabled: false   # using cert-manager chart below
+    persistence:
+      enabled: true
+      size: 5Gi
+
+  # ── Prometheus ─────────────────────────────────────────────────────────────
+  prometheus:
+    prometheusSpec:
+      retention: 15d
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: ceph-block   # RBD block storage — correct for single-writer TSDB
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 20Gi
+
+    service:
+      type: ClusterIP
+
+  # ── Alertmanager ───────────────────────────────────────────────────────────
+  alertmanager:
+    alertmanagerSpec:
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: ceph-block   # RBD block storage — correct for single-writer workload
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 2Gi
+
+    service:
+      type: ClusterIP
+
+  # ── Exporters ──────────────────────────────────────────────────────────────
+  nodeExporter:
+    enabled: true
+
+  kubeStateMetrics:
+    enabled: true
+
+  # Scrape kube-controller-manager and kube-scheduler on control plane
+  kubeControllerManager:
+    enabled: true
+  kubeScheduler:
+    enabled: true
+  kubeEtcd:
+    enabled: true
+
+# ── TLS Ingress via cert-manager ──────────────────────────────────────────────
+cert-manager:
+  host: grafana.uoeld.ac.ke
+  backendService: prometheus-grafana
+  backendPort: 80
+  acme:
+    staging: true
+    email: fngatia@uoeld.ac.ke
+    stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
+    liveServer: https://acme-v02.api.letsencrypt.org/directory

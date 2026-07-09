@@ -1,0 +1,12 @@
+apiVersion: v2
+name: headlamp
+description: A Helm chart for Kubernetes to deploy the headlamp application
+type: application
+version: 0.1.0
+dependencies:
+  - name: headlamp
+    version: 0.43.0
+    repository: https://kubernetes-sigs.github.io/headlamp/
+#  - name: cert-manager
+#    version: 0.1.0
+#    repository: file://../../repo/cert-manager

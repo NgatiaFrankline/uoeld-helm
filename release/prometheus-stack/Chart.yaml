@@ -1,0 +1,12 @@
+apiVersion: v2
+name: prometheus stack
+description: A Helm chart for Kubernetes to deploy Prometheus, Alertmanager and Grafana (kube-prometheus-stack)
+type: application
+version: 0.1.0
+dependencies:
+  - name: kube-prometheus-stack
+    version: "87.4.0"
+    repository: https://prometheus-community.github.io/helm-charts
+#  - name: cert-manager
+#    version: 0.1.0
+#    repository: file://../../repo/cert-manager

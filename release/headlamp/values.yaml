@@ -1,0 +1,41 @@
+headlamp:
+  replicaCount: 1
+  config:
+    # In-cluster mode - headlamp reads K8s API using the user's OIDC token
+    inCluster: true
+    oidc:
+      # Keycloak client configured in the realm for headlamp
+      # Create this client in Keycloak: Clients > Create > Client ID: headlamp
+      # Set: Access Type=confidential, Valid Redirect URIs=https://k8s.uoeld.ac.ke/* # No domain for now
+      # Set: Access Type=confidential, Valid Redirect URIs=http://41.89.169.222:30466/*
+      clientID: headlamp
+      clientSecret: "gC2EMB2IWnUXguVywHk16RSkYxtKBbPW"
+      # Update the realm name to match your Keycloak realm
+      issuerURL: https://sso.uoeld.ac.ke/realms/uoe
+      # groups scope — Keycloak maps realm roles into a flat "groups" claim via a
+      # User Realm Role mapper (Token Claim Name: groups) on the headlamp client.
+      # K8s API server reads this with --oidc-groups-claim=groups.
+      # K8s API server must be started with --oidc-groups-claim=roles
+      # Keycloak: Clients > headlamp > Client Scopes > add "roles" scope
+      scopes: "email profile groups"
+      groupClaim: "groups"
+      redirectURL: "http://41.89.169.222:30466/oidc-callback"
+  service:
+    # NodePort lets you reach headlamp at <any-node-ip>:30466 while DNS is being set up.
+    # Once the domain is live, ingress takes over and NodePort can stay as a fallback.
+    type: NodePort
+    port: 80
+    nodePort: 30466
+  # Disable the upstream chart's built-in ingress; using cert-manager chart instead
+  ingress:
+    enabled: false
+cert-manager:
+  host: erp-cluster.uoeld.ac.ke
+  # headlamp service name: Helm fullname = release-name when chart-name == release-name
+  backendService: headlamp
+  backendPort: 80
+  acme:
+    staging: false
+    email: fngatia@uoeld.ac.ke
+    stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
+    liveServer: https://acme-v02.api.letsencrypt.org/directory

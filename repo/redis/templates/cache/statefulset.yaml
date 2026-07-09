@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cache-sts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis-cache-app
+spec:
+  serviceName: redis-cache-headless-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache-app
+  template:
+    metadata:
+      labels:
+        app: redis-cache-app
+    spec:
+{{ include "x.image.pull.secrets.manifest" . | indent 6 }}
+      nodeSelector:
+        {{ .Values.nodeSelector.selectorKey }}: {{ .Values.nodeSelector.selectorValue }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - redis-cache-app
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: redis-cache
+          image: {{ .Values.image }}
+          imagePullPolicy: Always
+          ports:
+            - name: client
+              containerPort: 6379
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: REDIS_VOLUME_DIR_PREFIX
+              value: "$(NAMESPACE)-$(MY_POD_NAME)"
+            - name: THIS_NODE_NAME
+              value: "$(MY_POD_NAME).redis-cache-headless-svc.$(NAMESPACE).svc.cluster.local"
+            - name: NODE_ROLE
+              value: redis
+            - name: DATA_LAYER
+              value: cache
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              subPathExpr: $(REDIS_VOLUME_DIR_PREFIX)
+            - name: cache-config
+              mountPath: /conf/cache-redis.conf
+              subPath: cache-redis.conf
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - redis-cli -h localhost -p 6379 ping | grep -q PONG
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - redis-cli -h localhost -p 6379 ping | grep -q PONG
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 10
+      volumes:
+        - name: data
+          hostPath:
+            path: {{ .Values.storage.hostPath }}
+            type: DirectoryOrCreate
+        - name: cache-config
+          configMap:
+            name: redis-cache-config
+            items:
+              - key: CACHE_CONFIG
+                path: cache-redis.conf

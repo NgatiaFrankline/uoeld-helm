@@ -1,0 +1,8 @@
+cert-manager:
+  crds:
+    enabled: true
+  # Expose /metrics so kube-prometheus-stack can scrape cert-manager
+  prometheus:
+    enabled: true
+    servicemonitor:
+      enabled: true
