@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moodle-webserver-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: moodle-webserver
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: moodle-webserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: moodle-webserver
+    spec:
+      nodeSelector:
+        moodle: ready
+      containers:
+        - name: moodlephp
+          image: {{ .Values.image.moodle }}
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: moodle-www
+              mountPath: /var/www
+            - name: moodle-data
+              mountPath: /moodledata
+            - name: localcache-dir
+              mountPath: /var/local/cache
+            - name: tmp-dir
+              mountPath: /tmp
+            - name: php-fpm-socket
+              mountPath: /var/run/php
+          envFrom:
+            - configMapRef:
+                name: moodle-config
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - /edesk/docker-healthcheck.sh
+            failureThreshold: 4
+            initialDelaySeconds: 100
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 60
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - /edesk/docker-healthcheck.sh
+            failureThreshold: 4
+            initialDelaySeconds: 100
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 60
+        - name: moodlenginx
+          image: docker.io/ngatiafrankline/ecampus:nginx1.29.1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: moodle-www
+              mountPath: /var/www
+            - name: moodle-data
+              mountPath: /moodledata
+            - name: localcache-dir
+              mountPath: /var/local/cache
+            - name: tmp-dir
+              mountPath: /tmp
+            - name: php-fpm-socket
+              mountPath: /var/run/php
+          env:
+            - name: BUILD_ENV
+              value: "k8s"
+            - name: ENV
+              value: "prod"
+            - name: APP_WEBSERVER_ROOT_DIR
+              value: "/var/www/moodle"
+            - name: NGINX_PORT
+              value: "80"
+            - name: DATAROOT
+              value: "/moodledata/"
+            - name: CACHEDIR
+              value: "/var/www/moodle/cache/"
+            - name: TEMPDIR
+              value: "/var/www/moodle/temp/"
+            - name: LOCALCACHEDIR
+              value: "/var/local/cache/"
+            - name: LOCALREQUESTDIR
+              value: "/tmp/"
+            - name: FILEDIR
+              value: "/moodledata/filedir/"
+            - name: ALLOWED_DOMAINS
+              value: "*"
+      volumes:
+        - name: moodle-www
+          hostPath:
+            path: /mnt/drive1/moodle/www
+            type: Directory
+        - name: moodle-data
+          hostPath:
+            path: /mnt/drive1/moodle/data
+            type: Directory
+        - name: localcache-dir
+          emptyDir: {}
+        - name: tmp-dir
+          emptyDir: {}
+        - name: php-fpm-socket
+          emptyDir: {}

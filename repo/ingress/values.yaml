@@ -1,0 +1,16 @@
+hosts:
+  - ingressName: uoeld-ingress-test
+    issuerPrefix: uoeld-tls-test
+    backendService: ingress-svc-test-1
+    backendPort: 80
+    domain: testing1.uoeld.ac.ke
+  - ingressName: www-uoeld-tls-issuer-test
+    issuerPrefix: www-uoeld-tls-test
+    backendService: uoeld-svc-test
+    backendPort: 80
+    domain: testing2.uoeld.ac.ke
+acme:
+  staging: true
+  email: fngatia@uoeld.ac.ke
+  stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
+  liveServer: https://acme-v02.api.letsencrypt.org/directory

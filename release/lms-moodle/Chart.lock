@@ -1,0 +1,9 @@
+dependencies:
+- name: rsync
+  repository: file://../../repo/rsync
+  version: 0.1.0
+- name: ingress
+  repository: file://../../repo/ingress
+  version: 0.1.0
+digest: sha256:3140450f175a787e3103e3241df324b7a474b10831945a68a1676ef8f0a4325d
+generated: "2026-08-14T12:41:24.395606219+03:00"

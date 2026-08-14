@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Namespace }}-sts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: galeracluster
+spec:
+  serviceName: {{ .Release.Namespace }}-headless-svc
+  replicas: 2
+  selector:
+    matchLabels:
+      app: galeracluster
+  template:
+    metadata:
+      labels:
+        app: galeracluster
+    spec:
+      #nodeSelector: # Dont use nodeselector together with nodeAffinity
+      #  database: scheduled # Only in database labelled nodes
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: database
+                    operator: In
+                    values:
+                      - node-1
+                      - node-2
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: database
+                    operator: In
+                    values:
+                      - node-1
+            - weight: 90
+              preference:
+                matchExpressions:
+                  - key: database
+                    operator: In
+                    values:
+                      - node-2
+        # pods with the label app:galeracluster should not be co-located on the same node
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - galeracluster
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: galeranode
+          image: {{ .Values.image }}
+          imagePullPolicy: Always
+          #securityContext:
+          #  runAsUser: 1001
+          # Auxiliary vars to populate environment variables
+          env:
+            - name: BUILD_ENV
+              value: "k8s"
+            - name: GALERA_VOLUME_DIR_PREFIX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CLUSTER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # MARIADB
+            - name: GALERA_CLUSTER_INITIATOR_NODE_NAME
+              value: "$(CLUSTER_NAMESPACE)-sts-0.$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local"
+            - name: THIS_GALERA_CLUSTER_NODE_NAME
+              value: "$(MY_POD_NAME).$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local"
+            - name: GALERA_NODES_HOSTS
+              value: "$(CLUSTER_NAMESPACE)-sts-0.$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local,$(CLUSTER_NAMESPACE)-sts-1.$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local"
+            - name: MARIADB_USER
+              value: "fngatia"
+            - name: MARIADB_DATABASE
+              value: "uoeapiv6"
+            - name: BACKUP_DB_URL
+              value: /backup/db-backup
+            - name: MARIADB_ROOT_PASSWORD
+              value: "upom3MoJ3hxGCthj"
+            - name: MARIADB_PASSWORD
+              value: "KxFgCBBEaS2B0Ugu"
+            - name: MARIADB_AUTO_UPGRADE
+              value: "1"
+            - name: MARIADB_INITDB_SKIP_TZINFO
+              value: "1"
+          ports:
+            - name: mysql
+              containerPort: 3306
+              protocol: TCP
+            - name: replication
+              containerPort: 4567
+              protocol: TCP
+            - name: state-transfer
+              containerPort: 4568
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - mariadb mysql -uroot -p$MARIADB_ROOT_PASSWORD -e 'SELECT 1;'  || exit 1
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - bin/bash
+                - -c
+                - ping -c 1 127.0.0.1 &> /dev/null || exit 1
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: galera-hostpath-mariadb
+              mountPath: /var/lib/mysql
+              subPathExpr: $(GALERA_VOLUME_DIR_PREFIX)
+            - name: galera-hostpath-backup
+              mountPath: /backup
+              subPathExpr: $(GALERA_VOLUME_DIR_PREFIX)
+      volumes:
+        - name: galera-hostpath-mariadb
+          hostPath:
+            path: /kenetgaleracluster
+            type: DirectoryOrCreate
+        - name: galera-hostpath-backup
+          hostPath:
+            path: /kenetgalerabackup
+            type: DirectoryOrCreate

@@ -1,0 +1,6 @@
+dependencies:
+- name: rsync
+  repository: file://../../repo/rsync
+  version: 0.1.0
+digest: sha256:3e521f3fa492660e4d8ababe4e93c72c4c692f49c1100caa83e49178f58caf09
+generated: "2026-08-14T12:56:15.778156298+03:00"

@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sender-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: sender-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sender-app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sender-app
+    spec:
+      nodeSelector:
+        sender: node # this pod must be assigned here because we will use the hostpath drive
+      imagePullSecrets:
+        - name: sender-docker-repo-key
+      containers:
+        - name: rabbitmq
+          image: {{ .Values.image.rabbitmq }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5672
+              name: rabbitmq-broker
+              protocol: TCP
+            - containerPort: 15672
+              name: rabbitmq-ui
+              protocol: TCP
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+          env:
+            - name: BUILD_ENV
+              value: "k8s"
+            - name: RABBITMQ_DEFAULT_USER
+              value: "admin"
+            - name: RABBITMQ_DEFAULT_PASS
+              value: "UoE1125%"
+            - name: RABBITMQ_ERLANG_COOKIE
+              value: "mysecretcookie"
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - rabbitmq-diagnostics -q ping || exit 1
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 10
+        - name: sender
+          image: {{ .Values.image.java }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8091
+              name: sender-http
+              protocol: TCP
+          volumeMounts:
+            - name: java-prod-dir
+              mountPath: /app
+            - name: google-tokens-dir
+              mountPath: /tokens/google
+          envFrom:
+            - configMapRef:
+                name: sender-config
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - nc -z localhost 8091
+            failureThreshold: 10
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - nc -z localhost 8091
+            failureThreshold: 4
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 30
+      restartPolicy: Always
+      volumes:
+        - name: rabbitmq-data
+          emptyDir: {}
+        - name: java-prod-dir
+          hostPath:
+            path: /sender # make sure it stays on the same host which was declared above in nodeSelector
+            type: DirectoryOrCreate
+        - name: google-tokens-dir
+          hostPath:
+            path: /sender-tokens/google # make sure it stays on the same host which was declared above in nodeSelector
+            type: DirectoryOrCreate

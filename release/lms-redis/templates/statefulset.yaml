@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-sts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis-cluster
+spec:
+  serviceName: redis-cluster-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cluster
+  template:
+    metadata:
+      labels:
+        app: redis-cluster
+    spec:
+      securityContext:
+        sysctls:
+          - name: net.core.somaxconn
+            value: "65535"
+      nodeSelector:
+        moodle: ready
+      initContainers:
+        - name: config
+          image: {{ .Values.image.redis }}
+          command: [ "sh", "-c" ]
+          args:
+            - |
+              echo
+              HOSTNAME=$(hostname)
+              MASTER_FDQN=`hostname  -f | sed -e 's/redis-sts-[0-9]\./redis-sts-0./'`
+              echo "Hostname is $HOSTNAME"
+              echo "Master FDQ is $MASTER_FDQN"
+              echo "Coping configuration file"
+              cp /tmp/redis/redis.conf /etc/redis/redis.conf
+              echo "Validating hostname"
+              if ! echo "$HOSTNAME" | grep -q "redis-sts" >/dev/null; then
+                echo "Expected hostname should have redis-sts-*"
+                echo "Did you change the stetefulsets configuration?"
+                echo "Kindly investigate"
+                echo "Exiting with an error"
+                exit 1
+              fi
+              echo "Hostname validated successfully"
+              if [ "$HOSTNAME" = "redis-sts-0" ]; then
+                echo "This is the master"
+                echo "Skipping replica configuration"
+                exit 0
+              fi
+              echo "This node is a replica"
+              echo "Configuring this node as replica of $MASTER_FDQN"
+              echo "replicaof $MASTER_FDQN 6379" >> /etc/redis/redis.conf
+              echo "Configured successfully"
+          volumeMounts:
+            - name: redis-config
+              mountPath: /etc/redis/
+            - name: config
+              mountPath: /tmp/redis/
+      containers:
+        - name: redis
+          image: {{ .Values.image.redis }}
+          command: ["redis-server"]
+          args: ["/etc/redis/redis.conf"]
+          env:
+            - name: REDIS_VOLUME_DIR_PREFIX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 6379
+              name: redis
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              subPathExpr: $(REDIS_VOLUME_DIR_PREFIX)
+            - name: redis-config
+              mountPath: /etc/redis/
+      volumes:
+        - name: data
+          hostPath:
+            path: /redis-data
+            type: DirectoryOrCreate
+        - name: redis-config
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: redis-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+      protocol: TCP
+  selector:
+    app: redis-cluster

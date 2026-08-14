@@ -1,38 +1,37 @@
-enabled: true
-replicas: 1
-image: docker.io/uoewebmaster/uoeerp:rsync-v1
-addImagePullSecretsManifest: true
+image: docker.io/ngatiafrankline/rsync:v1
 nodeSelector:
-  selectorKey: backup
-  selectorValue: scheduled
-resources:
-  requests:
-    cpu: 250m
-    memory: 256Mi
-  limits:
-    cpu: "1"
-    memory: 512Mi
-env:
-  remoteUser: dngatia
-  remoteHost: 41.89.169.125
-  remotePort: "9125"
-  remoteDir: /backup/student-finance/
-  localDir: /data/
-  cronTime: "0 */6 * * *"
-storage:
-  rsyncSshPV: ""
-  type: pvc
-#  type: hostPath
-  pvcName: "example-pvc"
-  hostPathUri: "/example-host-path"
-rsyncExclude: |
-  .git/
-  .github/
-  node_modules/
-  vendor/
-  *.log
-  .env
-  .env.*
-  storage/logs/
-  tmp/
-  cache/
+  enabled: true
+  selector:
+    key: "database-test"
+    value: "node-1-test"
+containerVolume:
+  mountPath: /data
+  hostPath: /kenetgalerabackup
+  hostPathType: Directory
+rsyncRemote:
+  RSYNC_REMOTE_USER: "dngatia"
+  RSYNC_REMOTE_HOST_ADDRESS: "197.136.12.72-test"
+  RSYNC_REMOTE_HOST_PORT: "1272-test"
+  RSYNC_REMOTE_DIR: "/mnt/UOE-File-System-NFS-01/kenet-galera/"
+  RSYNC_LOCAL_DIR: "/data/"
+  RSYNC_LOG_FILE: "/logs/rsync.log"
+  RSYNC_CRON_TIME: "0 23 * * *"
+
+# EXAMPLE
+#nodeSelector:
+#  enabled: true
+#  selector:
+#    key: "database"
+#    value: "node-1"
+#containerVolume:
+#  mountPath: /data
+#  hostPath: /kenetgalerabackup
+#  hostPathType: Directory
+#rsyncRemote:
+#  RSYNC_REMOTE_USER: "dngatia"
+#  RSYNC_REMOTE_HOST_ADDRESS: "197.136.12.72"
+#  RSYNC_REMOTE_HOST_PORT: "1272"
+#  RSYNC_REMOTE_DIR: "/mnt/UOE-File-System-NFS-01/kenet-galera/"
+#  RSYNC_LOCAL_DIR: "/data/"
+#  RSYNC_LOG_FILE: "/logs/rsync.log"
+#  RSYNC_CRON_TIME: "0 23 * * *"

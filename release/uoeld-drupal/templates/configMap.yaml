@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uoeld-drupal-config
+  namespace: {{ .Release.Namespace }}
+data:
+  BUILD_ENV: "k8s"
+  ENV: "prod"
+  DRUPAL_REDIS_READY: "yes"
+  DRUPAL_TRUSTED_HOSTS: "uoeld\\.ac\\.ke,google\\.com,googleapis\\.com"
+  APP_BASE_URL: "https://uoeld.ac.ke"
+  APP_PUBLIC_FILE_BASE_URL: "https://uoeld.ac.ke/sites/default/files"
+  APP_GIT_ACCESS_TOKEN: "xxxx"
+  APP_GIT_SOURCE: "github.com/NgatiaFrankline/uoeld.git"
+  APP_GIT_PREFIX_DIR: "app/uoeld/web"
+  APP_SERVER_DIR: "/var/www/drupal"
+  APP_ROOT_DIR: "uoeld"
+  APP_ROOT_DIR_ABSOLUTE_PATH: "/var/www/drupal/web"
+  APP_THEME_PATH: "themes/uoeld"
+  DRUSH_DRUPAL_VENDOR_PATH: "/var/www/drupal/vendor/bin"
+  STAFF_PROFILES_REST_URL_BASE: "https://profiles.uoeld.ac.ke/api"

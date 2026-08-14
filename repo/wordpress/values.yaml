@@ -1,0 +1,4 @@
+image:
+  drupal: docker.io/ngatiafrankline/wordpress:wordpress
+  nginx: docker.io/ngatiafrankline/wordpress:nginx
+  redis: docker.io/ngatiafrankline/wordpress:redis

@@ -1,0 +1,33 @@
+image:
+  moodle: docker.io/ngatiafrankline/ecampus:php8.3bookworm
+rsync:
+  nodeSelector:
+    enabled: true
+    selector:
+      key: "moodle"
+      value: "ready"
+  containerVolume:
+    mountPath: /data
+    hostPath: /mnt/drive1/moodle
+    hostPathType: Directory
+  rsyncRemote:
+    RSYNC_REMOTE_USER: "dngatia"
+    RSYNC_REMOTE_HOST_ADDRESS: "197.136.12.72"
+    RSYNC_REMOTE_HOST_PORT: "1272"
+    RSYNC_REMOTE_DIR: "/mnt/UOE-File-System-NFS-01/lms-moodle/"
+    RSYNC_LOCAL_DIR: "/data/"
+    RSYNC_LOG_FILE: "/logs/rsync.log"
+    RSYNC_CRON_TIME: "0 */6 * * *"
+ingress:
+  hosts:
+    - ingressName: moodle-ingress
+      issuerPrefix: moodle-tls
+      backendService: moodle-webserver-service
+      backendPort: 80
+      domain: ecampus.uoeld.ac.ke
+  acme:
+    staging: true
+    email: fngatia@uoeld.ac.ke
+    stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
+    liveServer: https://acme-v02.api.letsencrypt.org/directory
+

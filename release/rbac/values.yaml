@@ -4,7 +4,7 @@
 #   1. Keycloak sends a "groups" claim in the OIDC token (e.g. ["/k8s-admins"])
 #   2. The K8s API server must be started with:
 #        --oidc-issuer-url=https://sso.uoeld.ac.ke/realms/uoe
-#        --oidc-client-id=headlamp
+#        --oidc-client-id=uoeld-headlamp
 #        --oidc-username-claim=email
 #        --oidc-groups-claim=groups
 #        --oidc-groups-prefix=
@@ -12,7 +12,7 @@
 #      RoleBindings grant access restricted to a specific namespace.
 #
 # Keycloak setup:
-#   - Realm > Clients > headlamp > Client Scopes > add "groups" scope
+#   - Realm > Clients > uoeld-headlamp > Client Scopes > add "groups" scope
 #   - Create groups: k8s-admins, k8s-editors, k8s-viewers, erp-viewers, finance-editors
 #   - Assign users to groups via their email account
 
@@ -92,52 +92,11 @@ rbac:
     - name: headlamp-cluster-fngatia
       userName: "fngatia@uoeld.ac.ke"
       clusterRole: cluster-admin
-    - name: headlamp-cluster-slizzyjr
-      userName: "jslater@uoeld.ac.ke"
-      clusterRole: view
-    - name: headlamp-cluster-sthaiya
-      userName: "sthaiya@uoeld.ac.ke"
-      clusterRole: view
-    - name: headlamp-cluster-ebra
-      userName: "ebrahimkirwa@uoeld.ac.ke"
-      clusterRole: view
   # RoleBindings for individual users — namespace-scoped access
-  userNamespaceBindings:
-    - name: headlamp-ns-slizzyjr-0
-      userName: "jslater@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: admissions
-    - name: headlamp-ns-slizzyjr-1
-      userName: "jslater@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: admissions-train
-    - name: headlamp-ns-slizzyjr-2
-      userName: "jslater@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: train-galera
+  userNamespaceBindings: []
+#    - name: headlamp-ns-slizzyjr-0
+#      userName: "jslater@uoeld.ac.ke"
+#      clusterRole: edit
+#      namespace: admissions
 
-    - name: headlamp-ns-sthaiya-0
-      userName: "sthaiya@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: core
-    - name: headlamp-ns-sthaiya-1
-      userName: "sthaiya@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: core-train
-    - name: headlamp-ns-sthaiya-2
-      userName: "sthaiya@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: train-galera
 
-    - name: headlamp-ns-ebra-0
-      userName: "ebrahimkirwa@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: sf
-    - name: headlamp-ns-ebra-1
-      userName: "ebrahimkirwa@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: sf-train
-    - name: headlamp-ns-ebra-2
-      userName: "ebrahimkirwa@uoeld.ac.ke"
-      clusterRole: edit
-      namespace: train-galera

@@ -1,0 +1,19 @@
+image: docker.io/ngatiafrankline/galera:v11
+rsync:
+  nodeSelector:
+    enabled: true
+    selector:
+      key: "database"
+      value: "node-1"
+  containerVolume:
+    mountPath: /data
+    hostPath: /kenetgalerabackup
+    hostPathType: Directory
+  rsyncRemote:
+    RSYNC_REMOTE_USER: "dngatia"
+    RSYNC_REMOTE_HOST_ADDRESS: "197.136.12.72"
+    RSYNC_REMOTE_HOST_PORT: "1272"
+    RSYNC_REMOTE_DIR: "/mnt/UOE-File-System-NFS-01/kenet-galera/"
+    RSYNC_LOCAL_DIR: "/data/"
+    RSYNC_LOG_FILE: "/logs/rsync.log"
+    RSYNC_CRON_TIME: "0 50 * * *"

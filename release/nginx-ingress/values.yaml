@@ -45,11 +45,12 @@ nginx-ingress:
         worker_rlimit_nofile: "1048576"
 
   # Expose /metrics on port 9113 for kube-prometheus-stack
-  prometheus:
-    create: true
-    port: 9113
-    scheme: http
-    service:
-      create: true
-    serviceMonitor:
-      create: true
+  # Enable them if the prometheus stack is installed
+#  prometheus:
+#    create: true
+#    port: 9113
+#    scheme: http
+#    service:
+#      create: true
+#    serviceMonitor:
+#      create: true

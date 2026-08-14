@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: wordpress-drupal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-drupal
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress-drupal
+    spec:
+      nodeSelector:
+        sitehost: uoeldwebsite # this pod must be assigned here because we will use the hostpath drive
+{{- if .Values.imagePullSecrets.enabled }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecrets.name }}
+{{- end }}
+      containers:
+        - name: drupal-php
+          image: {{ .Values.image.drupal }}
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: wordpress-drupal-drive
+              mountPath: /var/www/drupal
+            - name: php-fpm-socket
+              mountPath: /var/run/php
+            - name: redis-socket
+              mountPath: /var/run/redis
+          envFrom:
+            - configMapRef:
+                name: wordpress-drupal-config
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - /edesk/docker-healthcheck.sh
+            failureThreshold: 8
+            initialDelaySeconds: 120
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 60
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - /edesk/docker-healthcheck.sh
+            failureThreshold: 4
+            initialDelaySeconds: 100
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 60
+        - name: redis
+          image: {{ .Values.image.redis }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6379
+              name: redis
+              protocol: TCP
+          volumeMounts:
+            - name: redis-socket
+              mountPath: /var/run/redis
+          env:
+            - name: BUILD_ENV
+              value: "k8s"
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - redis-cli -s /var/run/redis/redis.sock ping || exit 1
+            failureThreshold: 3
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 60
+        - name: nginx
+          image: {{ .Values.image.nginx }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: drupal-http
+              protocol: TCP
+          volumeMounts:
+            - name: php-fpm-socket
+              mountPath: /var/run/php
+            - name: redis-socket
+              mountPath: /var/run/redis
+            - name: wordpress-drupal-drive
+              mountPath: /var/www/drupal
+          env:
+            - name: BUILD_ENV
+              value: "k8s"
+            - name: APP_WEBSERVER_ROOT_DIR
+              value: "/var/www/drupal/web"
+      restartPolicy: Always
+      volumes:
+        - name: wordpress-drupal-drive
+          hostPath:
+            path: /drupal/uoeld # make sure it stays on the same host
+            type: DirectoryOrCreate
+        - name: php-fpm-socket
+          emptyDir: {}
+        - name: redis-socket
+          emptyDir: {}

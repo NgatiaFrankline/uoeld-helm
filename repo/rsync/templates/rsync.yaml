@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rsync-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: rsync-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rsync-app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: rsync-app
+    spec:
+      #      securityContext:
+      #        runAsUser: 0
+      #        runAsGroup: 0
+      #        fsGroup: 0
+{{- if .Values.nodeSelector.enabled }}
+      nodeSelector:
+        {{ .Values.nodeSelector.selector.key }}: {{ .Values.nodeSelector.selector.value | quote }}
+{{- end }}
+      containers:
+        - name: rsync
+          image: {{ .Values.image }}
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: rsync-ssh
+              mountPath: /root/.ssh
+            - name: backup-dir
+              mountPath: {{ .Values.containerVolume.mountPath }}
+          env:
+            - name: BUILD_ENV
+              value: "k8s"
+            - name: RSYNC_REMOTE_USER
+              value: {{ .Values.rsyncRemote.RSYNC_REMOTE_USER | quote }}
+            - name: RSYNC_REMOTE_HOST_ADDRESS
+              value: {{ .Values.rsyncRemote.RSYNC_REMOTE_HOST_ADDRESS | quote }}
+            - name: RSYNC_REMOTE_HOST_PORT
+              value: {{ .Values.rsyncRemote.RSYNC_REMOTE_HOST_PORT | quote }}
+            - name: RSYNC_REMOTE_DIR
+              value: {{ .Values.rsyncRemote.RSYNC_REMOTE_DIR | quote }}
+            - name: RSYNC_LOCAL_DIR
+              value: {{ .Values.rsyncRemote.RSYNC_LOCAL_DIR | quote }}
+            - name: RSYNC_LOG_FILE
+              value: {{ .Values.rsyncRemote.RSYNC_LOG_FILE | quote }}
+            - name: RSYNC_CRON_TIME
+              value: {{ .Values.rsyncRemote.RSYNC_CRON_TIME | quote }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "pgrep -x crond > /dev/null || exit 1"
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "pgrep -x crond > /dev/null || exit 1"
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 1
+      restartPolicy: Always
+      volumes:
+        - name: rsync-ssh
+          hostPath:
+            path: /rsync-ssh # make sure it stays on the same host
+            type: DirectoryOrCreate
+        - name: backup-dir
+          hostPath:
+            path: {{ .Values.containerVolume.hostPath }}
+            type: {{ .Values.containerVolume.hostPathType }}

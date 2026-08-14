@@ -2,5 +2,8 @@ dependencies:
 - name: headlamp
   repository: https://kubernetes-sigs.github.io/headlamp/
   version: 0.43.0
-digest: sha256:db1b43a8872b55d878fc03c06374f284baf028154e783c5c1755ad5a77437a87
-generated: "2026-06-26T15:13:28.683961747+03:00"
+- name: ingress
+  repository: file://../../repo/ingress
+  version: 0.1.0
+digest: sha256:63b7406bda5b46feb3d3d14f1500febfe7ba7eca271ec2b43a81cd13529ab64f
+generated: "2026-08-14T08:46:10.529413111+03:00"

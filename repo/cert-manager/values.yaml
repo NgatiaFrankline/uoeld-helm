@@ -1,8 +1,0 @@
-backendService: ingress-svc
-backendPort: 80
-host: testing.uoeld.ac.ke
-acme:
-  staging: true
-  email: fngatia@uoeld.ac.ke
-  stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
-  liveServer: https://acme-v02.api.letsencrypt.org/directory

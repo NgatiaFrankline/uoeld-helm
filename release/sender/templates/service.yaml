@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sender-nodeport-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: NodePort
+  ports:
+    - name: http-nodeport
+      port: 8091
+      targetPort: sender-http
+      protocol: TCP
+      nodePort: 30096
+    - name: http-rabbitmq-ui
+      port: 8092
+      targetPort: rabbitmq-ui
+      protocol: TCP
+      nodePort: 30097
+    - name: google-callback
+      port: 8888
+      targetPort: google-callback
+      protocol: TCP
+      nodePort: 30098
+  selector:
+    app: sender-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sender-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: http
+      port: 8091
+      targetPort: sender-http
+      protocol: TCP
+    - name: http-rabbitmq-ui
+      port: 8092
+      targetPort: rabbitmq-ui
+      protocol: TCP
+    - name: google-callback
+      port: 8888
+      targetPort: google-callback
+      protocol: TCP
+  selector:
+    app: sender-app

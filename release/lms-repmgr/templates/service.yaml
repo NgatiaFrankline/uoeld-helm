@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: repmgr-headless-svc
+  namespace: repmgr
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+      protocol: TCP
+    - name: pgbouncer
+      port: 6432
+      targetPort: pgbouncer
+      protocol: TCP
+    - name: ssh
+      port: 22
+      targetPort: ssh
+      protocol: TCP
+  selector:
+    app: repmgr
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: repmgr-nodeport-svc
+  namespace: repmgr
+spec:
+  selector:
+    statefulset.kubernetes.io/pod-name: repmgr-sts-0 # select sts primary pod
+  type: NodePort
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+      protocol: TCP
+      nodePort: 30009
+    - name: pgbouncer
+      port: 6432
+      targetPort: pgbouncer
+      protocol: TCP
+      nodePort: 30010

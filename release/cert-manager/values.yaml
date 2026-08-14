@@ -1,8 +1,12 @@
 cert-manager:
   crds:
     enabled: true
+  global:
+    nodeSelector:
+      hostgroup: kenet
   # Expose /metrics so kube-prometheus-stack can scrape cert-manager
-  prometheus:
-    enabled: true
-    servicemonitor:
-      enabled: true
+  # Enable this when the kubestack is installed else you eill get error during installation
+#  prometheus:
+#    enabled: true
+#    servicemonitor:
+#      enabled: true

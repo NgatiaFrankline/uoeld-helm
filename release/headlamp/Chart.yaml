@@ -7,6 +7,6 @@ dependencies:
   - name: headlamp
     version: 0.43.0
     repository: https://kubernetes-sigs.github.io/headlamp/
-#  - name: cert-manager
-#    version: 0.1.0
-#    repository: file://../../repo/cert-manager
+  - name: ingress
+    version: 0.1.0
+    repository: file://../../repo/ingress
