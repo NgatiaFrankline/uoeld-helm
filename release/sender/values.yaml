@@ -1,3 +1,4 @@
 image:
-  rabbitmq: rabbitmq:4.1.4-management-alpine
-  java: docker.io/ngatiafrankline/sender:java23
+  rabbitmq: docker.io/ngatiafrankline/devops:sender-rabbitmq-4.3.6-mgt
+  java: docker.io/ngatiafrankline/devops:sender-java21
+PROD_JAR_FILE: "sender-0.1.7.jar"

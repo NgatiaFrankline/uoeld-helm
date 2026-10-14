@@ -19,12 +19,10 @@ spec:
     spec:
       nodeSelector:
         sender: node # this pod must be assigned here because we will use the hostpath drive
-      imagePullSecrets:
-        - name: sender-docker-repo-key
       containers:
         - name: rabbitmq
           image: {{ .Values.image.rabbitmq }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 5672
               name: rabbitmq-broker
@@ -35,15 +33,9 @@ spec:
           volumeMounts:
             - name: rabbitmq-data
               mountPath: /var/lib/rabbitmq
-          env:
-            - name: BUILD_ENV
-              value: "k8s"
-            - name: RABBITMQ_DEFAULT_USER
-              value: "admin"
-            - name: RABBITMQ_DEFAULT_PASS
-              value: "UoE1125%"
-            - name: RABBITMQ_ERLANG_COOKIE
-              value: "mysecretcookie"
+          envFrom:
+            - configMapRef:
+                name: rabbitmq-config
           livenessProbe:
             exec:
               command:
@@ -67,9 +59,14 @@ spec:
               mountPath: /app
             - name: google-tokens-dir
               mountPath: /tokens/google
+            - name: ssh-key
+              mountPath: /root/.ssh
+              readOnly: true
           envFrom:
             - configMapRef:
                 name: sender-config
+            - secretRef:
+                name: provider-secrets
           readinessProbe:
             exec:
               command:
@@ -104,3 +101,14 @@ spec:
           hostPath:
             path: /sender-tokens/google # make sure it stays on the same host which was declared above in nodeSelector
             type: DirectoryOrCreate
+        - name: ssh-key
+          secret:
+            secretName: sender-ssh-key
+            defaultMode: 0400
+            items:
+              - key: SSH_CONFIG
+                path: config
+              - key: MY_GIT_KEY
+                path: my_git_key
+              - key: MY_GIT_KEY_PUB
+                path: my_git_key.pub

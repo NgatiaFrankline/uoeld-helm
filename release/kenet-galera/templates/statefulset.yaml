@@ -55,7 +55,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
         - name: galeranode
-          image: {{ .Values.image }}
+          image: {{ .Values.image.galera }}
           imagePullPolicy: Always
           #securityContext:
           #  runAsUser: 1001
@@ -75,27 +75,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            # MARIADB
-            - name: GALERA_CLUSTER_INITIATOR_NODE_NAME
-              value: "$(CLUSTER_NAMESPACE)-sts-0.$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local"
             - name: THIS_GALERA_CLUSTER_NODE_NAME
               value: "$(MY_POD_NAME).$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local"
-            - name: GALERA_NODES_HOSTS
-              value: "$(CLUSTER_NAMESPACE)-sts-0.$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local,$(CLUSTER_NAMESPACE)-sts-1.$(CLUSTER_NAMESPACE)-headless-svc.$(CLUSTER_NAMESPACE).svc.cluster.local"
-            - name: MARIADB_USER
-              value: "fngatia"
-            - name: MARIADB_DATABASE
-              value: "uoeapiv6"
-            - name: BACKUP_DB_URL
-              value: /backup/db-backup
-            - name: MARIADB_ROOT_PASSWORD
-              value: "upom3MoJ3hxGCthj"
-            - name: MARIADB_PASSWORD
-              value: "KxFgCBBEaS2B0Ugu"
-            - name: MARIADB_AUTO_UPGRADE
-              value: "1"
-            - name: MARIADB_INITDB_SKIP_TZINFO
-              value: "1"
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Namespace }}-config
+            - secretRef:
+                name: {{ .Release.Namespace }}-secret
           ports:
             - name: mysql
               containerPort: 3306
@@ -127,6 +113,12 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 1
           volumeMounts:
+            - name: mariadb-config
+              mountPath: /conf/character_set.conf
+              subPath: character_set.conf
+            - name: mariadb-config
+              mountPath: /conf/galera.conf
+              subPath: galera.conf
             - name: galera-hostpath-mariadb
               mountPath: /var/lib/mysql
               subPathExpr: $(GALERA_VOLUME_DIR_PREFIX)
@@ -134,6 +126,14 @@ spec:
               mountPath: /backup
               subPathExpr: $(GALERA_VOLUME_DIR_PREFIX)
       volumes:
+        - name: mariadb-config
+          configMap:
+            name: mariadb-config
+            items:
+              - key: CHARACTER_SET
+                path: character_set.conf
+              - key: GALERA_CONF
+                path: galera.conf
         - name: galera-hostpath-mariadb
           hostPath:
             path: /kenetgaleracluster
@@ -142,3 +142,29 @@ spec:
           hostPath:
             path: /kenetgalerabackup
             type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Namespace }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  GALERA_CLUSTER_INITIATOR_NODE_NAME: "{{ .Release.Namespace }}-sts-0.{{ .Release.Namespace }}-headless-svc.{{ .Release.Namespace }}.svc.cluster.local"
+  GALERA_NODES_HOSTS: "{{ .Release.Namespace }}-sts-0.{{ .Release.Namespace }}-headless-svc.{{ .Release.Namespace }}.svc.cluster.local,{{ .Release.Namespace }}-sts-1.{{ .Release.Namespace }}-headless-svc.{{ .Release.Namespace }}.svc.cluster.local"
+  MARIADB_DATABASE: "uoeapiv6"
+  BACKUP_DB_URL: "/backup/db-backup"
+  MARIADB_AUTO_UPGRADE: "1"
+  MARIADB_INITDB_SKIP_TZINFO: "1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Namespace }}-secret
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+stringData:
+  MARIADB_USER: "fngatia"
+  MARIADB_DATABASE: "uoeapiv6"
+  MARIADB_ROOT_PASSWORD: "upom3MoJ3hxGCthj"
+  MARIADB_PASSWORD: "KxFgCBBEaS2B0Ugu"
+  INIT_CREATE_DB_AND_USER: "uoe_endowment:endowment_user:UxFgCBBEaS2B0Ugx"

@@ -2,9 +2,8 @@ image:
   drupal: docker.io/ngatiafrankline/lapurd:drupal
   nginx: docker.io/ngatiafrankline/lapurd:nginx
   redis: docker.io/ngatiafrankline/lapurd:redis
-imagePullSecrets:
-  enabled: true
-  name: docker-registry-secret
+git:
+  access_token: "xOXXZ6QLuU30FHV1fYDqEsesc07ruS0BQMMy"
 rsync:
   nodeSelector:
     enabled: true

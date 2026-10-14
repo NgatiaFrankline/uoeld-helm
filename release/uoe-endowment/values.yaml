@@ -1,8 +1,17 @@
 wordpress:
-  image:
-    drupal: docker.io/ngatiafrankline/wordpress:wordpress
-    nginx: docker.io/ngatiafrankline/wordpress:nginx
-    redis: docker.io/ngatiafrankline/wordpress:redis
+  config:
+    ENV: "prod"
+    WORDPRESS_DEBUG: "false"
+    WORDPRESS_CACHE: "true"
+    BACKUP_CRON_SCHEDULE: "*/25 * * * *"
+    SITE_URL: "https://uoe-endowment.uoeld.ac.ke"
+    DOMAIN: "uoe-endowment.uoeld.ac.ke"
+    WORDPRESS_DB_HOST_AND_PORT: "galera-proxysql-svc.kenet-galera.svc.cluster.local:6033"
+    WORDPRESS_DB_PORT: "6033"
+    WORDPRESS_DB_NAME: "uoe_endowment"
+    WORDPRESS_DB_USER: "endowment_user"
+    WORDPRESS_DB_PASSWORD: "UxFgCBBEaS2B0Ugx"
+    WORDPRESS_SERVICE_NODEPORT: "30018"
 rsync:
   nodeSelector:
     enabled: true
@@ -23,16 +32,11 @@ rsync:
     RSYNC_CRON_TIME: "0 */6 * * *"
 ingress:
   hosts:
-    - ingressName: uoeld-ingress
-      issuerPrefix: uoeld-tls
-      backendService: uoeld-svc
+    - ingressName: wordpress-ingress
+      issuerPrefix: wordpress-tls
+      backendService: wordpress-svc
       backendPort: 80
-      domain: uoeld.ac.ke
-    - ingressName: www-uoeld-ingress
-      issuerPrefix: www-uoeld-tls
-      backendService: uoeld-svc
-      backendPort: 80
-      domain: www.uoeld.ac.ke
+      domain: uoe-endowment.uoeld.ac.ke
   acme:
     staging: false
     email: fngatia@uoeld.ac.ke

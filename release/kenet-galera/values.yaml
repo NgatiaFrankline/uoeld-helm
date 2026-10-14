@@ -1,4 +1,6 @@
-image: docker.io/ngatiafrankline/galera:v11
+image:
+  galera: docker.io/ngatiafrankline/galera:mariadb-v11
+  proxysql: docker.io/ngatiafrankline/galera:proxysql-v3
 rsync:
   nodeSelector:
     enabled: true

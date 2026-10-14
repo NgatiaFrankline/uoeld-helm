@@ -19,10 +19,6 @@ spec:
     spec:
       nodeSelector:
         sitehost: uoeldwebsite # this pod must be assigned here because we will use the hostpath drive
-{{- if .Values.imagePullSecrets.enabled }}
-      imagePullSecrets:
-        - name: {{ .Values.imagePullSecrets.name }}
-{{- end }}
       containers:
         - name: drupal-php
           image: {{ .Values.image.drupal }}
