@@ -1,0 +1,21 @@
+apiVersion: v2
+name: lms-helpdesk
+description: A Helm chart for Kubernetes to deploy lms-helpdesk
+type: application
+version: 0.1.0
+dependencies:
+  - name: frappe
+    version: 0.1.0
+    repository: file://../../repo/frappe
+  - name: redis
+    version: 0.1.0
+    repository: file://../../repo/redis
+  - name: rsync
+    version: 0.1.0
+    repository: file://../../repo/rsync
+  - name: ingress
+    version: 0.1.0
+    repository: file://../../repo/ingress
+  - name: git-ssh
+    version: 0.1.0
+    repository: file://../../repo/git-ssh

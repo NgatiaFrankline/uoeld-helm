@@ -1,0 +1,12 @@
+dependencies:
+- name: wordpress
+  repository: file://../../repo/wordpress
+  version: 0.1.0
+- name: rsync
+  repository: file://../../repo/rsync
+  version: 0.1.0
+- name: ingress
+  repository: file://../../repo/ingress
+  version: 0.1.0
+digest: sha256:80210ad7a7fea1a59a341bcf89c852d50a9889a0f86f4d4c08342bde720e586f
+generated: "2026-08-22T18:32:49.866054588+03:00"

@@ -4,9 +4,15 @@ description: A Helm chart for Kubernetes to deploy lms-moodle
 type: application
 version: 0.1.0
 dependencies:
+  - name: redis
+    version: 0.1.0
+    repository: file://../../repo/redis
   - name: rsync
     version: 0.1.0
     repository: file://../../repo/rsync
   - name: ingress
     version: 0.1.0
     repository: file://../../repo/ingress
+  - name: git-ssh
+    version: 0.1.0
+    repository: file://../../repo/git-ssh

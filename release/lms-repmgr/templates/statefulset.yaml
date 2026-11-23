@@ -7,7 +7,7 @@ metadata:
     app: repmgr
 spec:
   serviceName: repmgr-headless-svc
-  replicas: 3
+  replicas: 2
   podManagementPolicy: OrderedReady
   selector:
     matchLabels:
@@ -28,7 +28,7 @@ spec:
                     operator: In
                     values:
                       - node-1
-          #                  - node-2
+#                     - node-2
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -37,84 +37,50 @@ spec:
                     operator: In
                     values:
                       - node-1
-      #          - weight: 90
-      #            preference:
-      #              matchExpressions:
-      #              - key: repmgr
-      #                operator: In
-      #                values:
-      #                - node-2
-      #        # pods with the label app:galeracluster should not be co-located on the same node
-      #        podAntiAffinity:
-      #          requiredDuringSchedulingIgnoredDuringExecution:
-      #            - labelSelector:
-      #                matchExpressions:
-      #                  - key: app
-      #                    operator: In
-      #                    values:
-      #                      - repmgr
-      #              topologyKey: "kubernetes.io/hostname"
+#          - weight: 90
+#            preference:
+#              matchExpressions:
+#              - key: repmgr
+#                operator: In
+#                values:
+#                - node-2
+#        # pods with the label app:galeracluster should not be co-located on the same node
+#        podAntiAffinity:
+#          requiredDuringSchedulingIgnoredDuringExecution:
+#            - labelSelector:
+#                matchExpressions:
+#                  - key: app
+#                    operator: In
+#                    values:
+#                      - repmgr
+#              topologyKey: "kubernetes.io/hostname"
       containers:
         - name: repmgr
           image: {{ .Values.image.repmgr }}
           imagePullPolicy: Always
           # Auxiliary vars to populate environment variables
           env:
-            - name: BUILD_ENV
-              value: "k8s"
-            - name: ENV
-              value: "prod"
-            - name: AUTHOR
-              value: "Ngatia Frankline"
-            - name: PGHBA_HOST_ADDRESS
-              value: "10.244.0.0/0"
-            - name: POSTGRESQL_VOLUME_DIR_PREFIX
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: MY_POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: MY_POD_ORDINAL_INDEX
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.annotations['spec.pod.beta.kubernetes.io/statefulset-index']
-            # POSTGRES
-            - name: POSTGRES_USER
-              value: "postgres"
-            - name: PGUSER
-              value: "postgres"
-            - name: POSTGRES_PASSWORD
-              value: "H3qlJex73RXxS8u5g4oU"
-            - name: POSTGRES_DB
-              value: "postgres"
-            - name: PGDATA
-              value: "/var/lib/postgresql/data"
-            # PGPOOL
-            - name: PGPOOL_USER
-              value: "pgpool"
-            - name: PGPOOL_PASSWORD
-              value: "iy9kHO5+srPl5x2ZRUEU"
-            - name: PGPOOL_CONF_DIR
-              value: "/etc/pgpool2"
-            # REPMGR
-            - name: REPMGR_NAMESPACE
+            - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: REPMGR_USER
-              value: "repmgr"
+            - name: POSTGRESQL_VOLUME_DIR_PREFIX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: REPMGR_NODE_NAME
-              value: "$(MY_POD_NAME).repmgr-headless-svc.$(REPMGR_NAMESPACE).svc.cluster.local"
+              value: "$(MY_POD_NAME).repmgr-headless-svc.$(NAMESPACE).svc.cluster.local"
             - name: REPMGR_INIT_PRIMARY_HOST
-              value: "repmgr-sts-0.repmgr-headless-svc.$(REPMGR_NAMESPACE).svc.cluster.local"
-            - name: REPMGR_PARTNER_NODES
-              value : "repmgr-sts-0.repmgr-headless-svc.repmgr,repmgr-sts-1.repmgr-headless-svc.repmgr"
-            - name: REPMGR_RECONNECT_ATTEMPT
-              value: "15"
-            - name: REPMGR_RECONNECT_INTERVAL
-              value: "180"
+              value: "repmgr-sts-0.repmgr-headless-svc.$(NAMESPACE).svc.cluster.local"
+          envFrom:
+            - secretRef:
+                name: repmgr-secret
+            - configMapRef:
+                name: repmgr-config
           ports:
             - name: postgresql
               containerPort: 5432
@@ -125,9 +91,9 @@ spec:
           livenessProbe:
             exec:
               command:
-                - bash
-                - -ec
-                - 'PGPASSWORD=$POSTGRES_PASSWORD psql -w -U "postgres" -d "postgres" -h 127.0.0.1 -c "SELECT 1"'
+                - /bin/bash
+                - -c
+                - /usr/bin/pg_isready
             initialDelaySeconds: 70
             periodSeconds: 30
             timeoutSeconds: 10
@@ -136,9 +102,9 @@ spec:
           readinessProbe:
             exec:
               command:
-                - bash
-                - -ec
-                - 'PGPASSWORD=$POSTGRES_PASSWORD psql -w -U "postgres" -d "postgres" -h 127.0.0.1 -c "SELECT 1"'
+                - /bin/bash
+                - -c
+                - /usr/bin/pg_isready
             initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 10
@@ -155,26 +121,25 @@ spec:
               mountPath: /backup
               subPathExpr: $(POSTGRESQL_VOLUME_DIR_PREFIX)
         - name: pgbouncer
-          image: docker.io/ngatiafrankline/repmgr:pgbouncer1
+          image: {{ .Values.image.pgbouncer }}
           imagePullPolicy: Always
           # Auxiliary vars to populate environment variables
           env:
-            - name: BUILD_ENV
-              value: "k8s"
-            - name: ENV
-              value: "prod"
-            - name: AUTHOR
-              value: "Ngatia Frankline"
-            - name: POSTGRES_USER
-              value: "moodleprod"
-            - name: POSTGRES_PASSWORD
-              value: "H3qlJex73RXxS8u5g4oU"
-            - name: POSTGRES_TARGET_DB
-              value: "uoemoodleproddb"
-            - name: POSTGRES_HOST
-              value: "127.0.0.1"
-            - name: POSTGRES_PORT
-              value: "5432"
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POOLS
+              value: "$(MY_POD_NAME).repmgr-headless-svc.$(NAMESPACE).svc.cluster.local:5432:$(MOODLE_POSTGRES_USER):$(POSTGRES_PASSWORD):$(MOODLE_POSTGRES_DB)"
+          envFrom:
+            - secretRef:
+                name: repmgr-secret
+            - configMapRef:
+                name: repmgr-config
           ports:
             - name: pgbouncer
               containerPort: 6432
@@ -182,9 +147,9 @@ spec:
           livenessProbe:
             exec:
               command:
-                - sh
+                - /bin/bash
                 - -c
-                - pg_isready -h 127.0.0.1 -p 6432 -U postgres
+                - exec 3<>/dev/tcp/127.0.0.1/6432
             initialDelaySeconds: 70
             periodSeconds: 30
             timeoutSeconds: 10
@@ -193,10 +158,10 @@ spec:
           readinessProbe:
             exec:
               command:
-                - sh
+                - /bin/bash
                 - -c
-                - pg_isready -h 127.0.0.1 -p 6432 -U postgres
-            initialDelaySeconds: 120
+                - exec 3<>/dev/tcp/127.0.0.1/6432
+            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 10
             successThreshold: 1
@@ -215,3 +180,49 @@ spec:
           hostPath:
             path: /mnt/drive1/repmgr-backup
             type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repmgr-secret
+  namespace: {{ .Release.Namespace }}
+type: Opaque
+stringData:
+  # POSTGRES
+  POSTGRES_USER: {{ .Values.secrets.POSTGRES_USER | quote }}
+  PGUSER: {{ .Values.secrets.PGUSER | quote }}
+  POSTGRES_PASSWORD: {{ .Values.secrets.POSTGRES_PASSWORD | quote }}
+  POSTGRES_DB: {{ .Values.secrets.POSTGRES_DB | quote }}
+  SHELL_USER: {{ .Values.secrets.SHELL_USER | quote }}
+  SHELL_USER_PASSWORD: {{ .Values.secrets.SHELL_USER_PASSWORD | quote }}
+  SHELL_USER_DB: {{ .Values.secrets.SHELL_USER_DB | quote }}
+  # REPMGR
+  REPMGR_USER: {{ .Values.secrets.REPMGR_USER | quote }}
+  # PGPOOL
+  PGPOOL_USER: {{ .Values.secrets.PGPOOL_USER | quote }}
+  PGPOOL_PASSWORD: {{ .Values.secrets.PGPOOL_PASSWORD | quote }}
+  # PGBOUNCER ENV
+  MOODLE_POSTGRES_USER: {{ .Values.secrets.MOODLE_POSTGRES_USER | quote }}
+  MOODLE_POSTGRES_PASSWORD: {{ .Values.secrets.MOODLE_POSTGRES_PASSWORD | quote }}
+  MOODLE_POSTGRES_DB: {{ .Values.secrets.MOODLE_POSTGRES_DB | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: repmgr-config
+  namespace: {{ .Release.Namespace }}
+data:
+  BUILD_ENV: "K8S"
+  ENV: "prod"
+  AUTHOR: "Ngatia Frankline"
+  PGDATA: "/var/lib/postgresql/data"
+  REPMGR_PARTNER_NODES: >-
+    repmgr-sts-0.repmgr-headless-svc.{{ .Release.Namespace }}.svc.cluster.local,
+    repmgr-sts-1.repmgr-headless-svc.{{ .Release.Namespace }}.svc.cluster.local
+  REPMGR_RECONNECT_ATTEMPT: "20" # 20 times
+  REPMGR_RECONNECT_INTERVAL: "180" # 3 minutes
+  PREFERRED_PRIMARY_CRON_SCHEDULE: "*/15 * * * *"
+  PG_DUMP_CRON_SCHEDULE: "0 */2 * * *" # Every 2AM
+  PGHBA_HOST_ADDRESS: {{ .Values.postgres_PGHBA_HOST_ADDRESS | quote }}
+  REPMGR_ALLOW_PRIMARY_START_WITHOUT_PARTNERS: "false"
+  REPMGR_PRIMARY_WAITING_FOR_PARTNERS_TIMEOUT: "200" # this value is derived from probe wait time before start

@@ -18,7 +18,7 @@ spec:
         app: sender-app
     spec:
       nodeSelector:
-        sender: node # this pod must be assigned here because we will use the hostpath drive
+        sender: scheduled # this pod must be assigned here because we will use the hostpath drive
       containers:
         - name: rabbitmq
           image: {{ .Values.image.rabbitmq }}
@@ -95,11 +95,11 @@ spec:
           emptyDir: {}
         - name: java-prod-dir
           hostPath:
-            path: /sender # make sure it stays on the same host which was declared above in nodeSelector
+            path: /mnt/drive1/sender/java-prod # make sure it stays on the same host which was declared above in nodeSelectorctor
             type: DirectoryOrCreate
         - name: google-tokens-dir
           hostPath:
-            path: /sender-tokens/google # make sure it stays on the same host which was declared above in nodeSelector
+            path: /mnt/drive1/sender/google-tokens # make sure it stays on the same host which was declared above in nodeSelector
             type: DirectoryOrCreate
         - name: ssh-key
           secret:

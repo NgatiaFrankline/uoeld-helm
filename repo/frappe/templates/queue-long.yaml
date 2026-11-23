@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erp-queue-long-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: erp-queue-long-app
+spec:
+  replicas: {{ .Values.hpa.queue.minReplicas }}
+  selector:
+    matchLabels:
+      app: erp-queue-long-app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: erp-queue-long-app
+    spec:
+{{ include "x.image.pull.secrets.manifest" . | indent 6 }}
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      nodeSelector:
+        {{ .Values.nodeSelector.selectorKey }}: {{ .Values.nodeSelector.selectorValue }}
+{{ include "x.erpnext.volumes" . | indent 6 }}
+      containers:
+        - name: erp
+          image: {{ .Values.image }}
+          imagePullPolicy: Always
+          args: ["bench","worker","--queue","long"]
+{{ include "x.erpnext.volumeMounts" . | indent 10 }}
+          env:
+            - name: BUILD_ASSETS
+              value: "false"
+            - name: RUNS_CRON
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: erp-secret
+            - configMapRef:
+                name: erpnext-config
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - pgrep -f "bench worker.*long" || exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - pgrep -f "bench worker.*long" || exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 10

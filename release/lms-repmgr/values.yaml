@@ -1,5 +1,26 @@
 image:
-  repmgr: docker.io/ngatiafrankline/repmgr:16.2bullseye
+  repmgr: docker.io/ngatiafrankline/ecampus:repmgr-v17
+  pgbouncer: docker.io/ngatiafrankline/ecampus:pgbouncer-v17
+  pgpool: docker.io/ngatiafrankline/ecampus:pgpool-v17
+postgres_PGHBA_HOST_ADDRESS: "10.244.0.0/0"
+secrets:
+  # POSTGRES
+  POSTGRES_USER: "postgres"
+  PGUSER: "postgres"
+  POSTGRES_PASSWORD: "H3qlJex73RXxS8u5g4oU"
+  POSTGRES_DB: "postgres"
+  SHELL_USER: "postgres"
+  SHELL_USER_PASSWORD: "3xample"
+  SHELL_USER_DB: "postgres"
+  # REPMGR
+  REPMGR_USER: "repmgr"
+  # PGPOOL
+  PGPOOL_USER: "pgpool"
+  PGPOOL_PASSWORD: "iy9kHO5+srPl5x2ZRUEU"
+  # PGBOUNCER ENV
+  MOODLE_POSTGRES_USER: "moodleprod"
+  MOODLE_POSTGRES_PASSWORD: "H3qlJex73RXxS8u5g4oU"
+  MOODLE_POSTGRES_DB: "uoemoodleproddb"
 rsync:
   nodeSelector:
     enabled: true

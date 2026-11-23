@@ -1,5 +1,28 @@
 image:
-  moodle: docker.io/ngatiafrankline/ecampus:php8.3bookworm
+  moodle: docker.io/ngatiafrankline/ecampus:php8.4-trixie
+  nginx: docker.io/ngatiafrankline/ecampus:nginx1.31.6
+nodeSelector:
+  selectorKey: moodle
+  selectorValue: ready
+enable_session_redis: "true"
+redis:
+  image: docker.io/ngatiafrankline/ecampus:redis-v7
+  addImagePullSecretsManifest: false
+  nodeSelector:
+    selectorKey: moodle
+    selectorValue: ready
+  storage:
+    hostPath: /redis-data
+  queue:
+    password: "queue123"
+    port: 1200
+    maxmemory: 1gb
+    appendonly: true
+  cache:
+    password: "cache123"
+    port: 1300
+    maxmemory: 1gb
+    appendonly: false
 rsync:
   nodeSelector:
     enabled: true
@@ -26,7 +49,7 @@ ingress:
       backendPort: 80
       domain: ecampus.uoeld.ac.ke
   acme:
-    staging: true
+    staging: false
     email: fngatia@uoeld.ac.ke
     stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
     liveServer: https://acme-v02.api.letsencrypt.org/directory

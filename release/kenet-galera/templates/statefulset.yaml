@@ -97,7 +97,7 @@ spec:
               command:
                 - /bin/bash
                 - -c
-                - mariadb mysql -uroot -p$MARIADB_ROOT_PASSWORD -e 'SELECT 1;'  || exit 1
+                - mariadb -uroot -p$MARIADB_ROOT_PASSWORD -e 'SELECT 1;'  || exit 1
             initialDelaySeconds: 40
             periodSeconds: 20
             timeoutSeconds: 10
@@ -167,4 +167,6 @@ stringData:
   MARIADB_DATABASE: "uoeapiv6"
   MARIADB_ROOT_PASSWORD: "upom3MoJ3hxGCthj"
   MARIADB_PASSWORD: "KxFgCBBEaS2B0Ugu"
-  INIT_CREATE_DB_AND_USER: "uoe_endowment:endowment_user:UxFgCBBEaS2B0Ugx"
+  INIT_CREATE_DB_AND_USER: >-
+    uoe_endowment:endowment_user:UxFgCBBEaS2B0Ugx,
+    eldoretcitycampus:citycampus_user:JxFgCBBEaS2B0UgY

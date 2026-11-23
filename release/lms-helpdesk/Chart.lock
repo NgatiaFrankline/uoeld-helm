@@ -1,0 +1,18 @@
+dependencies:
+- name: frappe
+  repository: file://../../repo/frappe
+  version: 0.1.0
+- name: redis
+  repository: file://../../repo/redis
+  version: 0.1.0
+- name: rsync
+  repository: file://../../repo/rsync
+  version: 0.1.0
+- name: ingress
+  repository: file://../../repo/ingress
+  version: 0.1.0
+- name: git-ssh
+  repository: file://../../repo/git-ssh
+  version: 0.1.0
+digest: sha256:09a235cb893e569dde02ee36f408acb545f9c5ff61f8910db0864ec363f530e1
+generated: "2026-11-03T16:00:58.66881562+03:00"

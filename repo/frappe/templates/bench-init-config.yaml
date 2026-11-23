@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frappe-config
+  namespace: {{ .Release.Namespace }}
+data:
+  ENV: "prod"
+  BACKUP_DIR: "/backup"
+  HOSTNAME: {{ .Values.hostUrl | quote }}
+  BACKEND: "erp-svc.{{ .Release.Namespace }}.svc.cluster.local:8000"
+  SITE_BACKEND: "erp-svc.{{ .Release.Namespace }}.svc.cluster.local:8000"
+  FRAPPE_SITE_NAME_HEADER: "erp"
+  CURRENT_SITE_NAME: "erp"
+  SOCKETIO: "erp-svc.{{ .Release.Namespace }}.svc.cluster.local:9000"
+  UPSTREAM_REAL_IP_ADDRESS: "127.0.0.1"
+  UPSTREAM_REAL_IP_HEADER: "X-Forwarded-For"
+  UPSTREAM_REAL_IP_RECURSIVE: "off"
+  PROXY_READ_TIMEOUT: "120"
+  CLIENT_MAX_BODY_SIZE: "50m"
+  SITE_NAME: "erp"
+  IS_DEFAULT_SITE: "true"
+  INSTALL_SITE: "erpnext"
+  SOCKETIO_PORT: "9000"
+  REDIS_QUEUE: "redis-queue-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.redis.queuePort }}"
+  REDIS_CACHE: "redis-cache-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.redis.cachePort }}"
+  REDIS_SOCKETIO: "redis-queue-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.redis.queuePort }}"
+  SERVER_SCRIPT_ENABLED: {{ .Values.configs.SERVER_SCRIPT_ENABLED | quote }}
+  ENABLE_ADVANCED_ADMIN_FEATURES: {{ .Values.configs.ENABLE_ADVANCED_ADMIN_FEATURES | quote }}

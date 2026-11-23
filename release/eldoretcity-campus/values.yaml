@@ -1,0 +1,48 @@
+wordpress:
+  config:
+    ENV: "prod"
+    WORDPRESS_DEBUG: "false"
+    WORDPRESS_CACHE: "true"
+    BACKUP_CRON_SCHEDULE: "0 2 * * *"
+    SITE_URL: "https://eldoretcity-campus.uoeld.ac.ke"
+    DOMAIN: "eldoretcity-campus.uoeld.ac.ke"
+    WORDPRESS_DB_HOST_AND_PORT: "galera-proxysql-svc.kenet-galera.svc.cluster.local:6033"
+    WORDPRESS_DB_PORT: "6033"
+    WORDPRESS_DB_NAME: "eldoretcitycampus"
+    WORDPRESS_DB_USER: "citycampus_user"
+    WORDPRESS_DB_PASSWORD: "JxFgCBBEaS2B0UgY"
+    WORDPRESS_SERVICE_NODEPORT: "30019"
+  hostPaths:
+    WORDPRESS_WWW: "/wordpress/eldoretcity-campus/www"
+    WORDPRESS_BACKUP: "/wordpress/eldoretcity-campus/backup"
+    WORDPRESS_LOGS: "/wordpress/eldoretcity-campus/logs"
+rsync:
+  nodeSelector:
+    enabled: true
+    selector:
+      key: "sitehost"
+      value: "uoeldwebsite"
+  containerVolume:
+    mountPath: /data
+    hostPath: /wordpress/eldoretcity-campus/backup
+    hostPathType: Directory
+  rsyncRemote:
+    RSYNC_REMOTE_USER: "dngatia"
+    RSYNC_REMOTE_HOST_ADDRESS: "197.136.12.72"
+    RSYNC_REMOTE_HOST_PORT: "1272"
+    RSYNC_REMOTE_DIR: "/mnt/UOE-File-System-NFS-01/eldoretcity-campus/"
+    RSYNC_LOCAL_DIR: "/data/"
+    RSYNC_LOG_FILE: "/logs/rsync.log"
+    RSYNC_CRON_TIME: "0 */6 * * *"
+ingress:
+  hosts:
+    - ingressName: wordpress-ingress
+      issuerPrefix: wordpress-tls
+      backendService: wordpress-svc
+      backendPort: 80
+      domain: eldoretcity-campus.uoeld.ac.ke
+  acme:
+    staging: false
+    email: fngatia@uoeld.ac.ke
+    stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
+    liveServer: https://acme-v02.api.letsencrypt.org/directory

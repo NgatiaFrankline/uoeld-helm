@@ -1,0 +1,47 @@
+image: docker.io/uoewebmaster/uoeerp:frappe-erpnext-v15
+addImagePullSecretsManifest: true
+hostUrl: https://core.uoeld.ac.ke
+nodeSelector:
+  selectorKey: erpnext
+  selectorValue: scheduled
+hpa:
+  targetCPUUtilizationPercentage: 95
+  targetMemoryUtilizationPercentage: 90
+  erp:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+  queue:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+  scheduler:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+redis:
+  queuePort: 1200
+  cachePort: 1300
+secrets:
+  DB_HOST: "galera-proxysql-svc.galera.svc"
+  DB_PORT: "6033"
+  MYSQL_ROOT_PASSWORD: "wAqe8FrN2sTbLpVx"
+  MARIADB_ROOT_PASSWORD: "wAqe8FrN2sTbLpVx"
+  DB_ROOT_USER: "root"
+  DB_ROOT_PASSWORD: "wAqe8FrN2sTbLpVx"
+  ADMIN_PASSWORD: "1ct1125%"
+  SITE_DB_PASSWORD: "K9xVm2QaT7pLsFwR"
+configs:
+  SERVER_SCRIPT_ENABLED: 1
+  ENABLE_ADVANCED_ADMIN_FEATURES: 1
+cron:
+  BENCH_BACKUP_CRON_SCHEDULE: "0 */2 * * *" # Every 2AM
+  REFRESH_CODEBASE_CRON_SCHEDULE: "" # Disabled in production
+  REFRESH_CODEBASE_CRON_APPS: "unisetup,programs"
+pvc:
+  frappeBench:
+    pvClaimName: ""
+    storageSize: 100Gi
+  backup:
+    pvClaimName: ""
+    storageSize: 10Gi

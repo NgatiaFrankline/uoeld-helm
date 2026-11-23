@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: erp-deployment
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: erp-app
+spec:
+  replicas: {{ .Values.hpa.erp.minReplicas }}
+  selector:
+    matchLabels:
+      app: erp-app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: erp-app
+    spec:
+{{ include "x.image.pull.secrets.manifest" . | indent 6 }}
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      nodeSelector:
+        {{ .Values.nodeSelector.selectorKey }}: {{ .Values.nodeSelector.selectorValue }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - erp-app
+              topologyKey: "kubernetes.io/hostname"  # One deployment per node
+{{ include "x.erpnext.volumes" . | indent 6 }}
+      containers:
+        - name: erp
+          image: {{ .Values.image }}
+          imagePullPolicy: Always
+          args:
+            - supervisord
+            - -n
+            - -c
+            - /etc/supervisor/erp.supervisord.conf
+{{ include "x.erpnext.volumeMounts" . | indent 10 }}
+          env:
+            - name: BUILD_ASSETS
+              value: "true"
+            - name: RUNS_CRON
+              value: "true"
+            - name: BENCH_BACKUP_CRON_SCHEDULE
+              value: {{ .Values.cron.BENCH_BACKUP_CRON_SCHEDULE }}
+            - name: REFRESH_CODEBASE_CRON_SCHEDULE
+              value: {{ .Values.cron.REFRESH_CODEBASE_CRON_SCHEDULE }}
+            - name: REFRESH_CODEBASE_CRON_APPS
+              value: {{ .Values.cron.REFRESH_CODEBASE_CRON_APPS }}
+          envFrom:
+            - secretRef:
+                name: erp-secret
+            - configMapRef:
+                name: erpnext-config
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          ports:
+            - name: erp
+              containerPort: 8080
+              protocol: TCP
+            - name: backend
+              containerPort: 8000
+              protocol: TCP
+            - name: socketio
+              containerPort: 9000
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - curl -s -o /dev/null http://127.0.0.1:8000 || exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 100
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - curl -s -o /dev/null http://127.0.0.1:8000 || exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 600
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 10

@@ -1,0 +1,81 @@
+frappe:
+  image:
+    frappe: docker.io/ngatiafrankline/ecampus:frappe-v15
+  hostUrl: https://help.lms.uoeld.ac.ke
+  nodeSelector:
+    selectorKey: helpdesk
+    selectorValue: scheduled
+  redis:
+    queuePort: 1200
+    cachePort: 1300
+  secrets:
+    SITE_DB_NAME: "support_db"
+    SITE_DB_PASSWORD: "HlNTiPlA6FUmrOer"
+    DB_HOST: "galera-proxysql-svc.kenet-galera.svc.cluster.local"
+    DB_PORT: "6033"
+    DB_ROOT_USER: "root"
+    DB_ROOT_PASSWORD: "upom3MoJ3hxGCthj"
+    ADMIN_PASSWORD: "0del1125%"
+  configs:
+    SITE_NAME: "support"
+    REFRESH_CODEBASE_APPS: "kustomize,tiksupport"
+    BACKUP_CRON_SCHEDULE: "0 2 * * *" # Every 2AM
+    GUNICORN_WORKERS: "2"
+    GUNICORN_THREADS: "4"
+    GUNICORN_TIMEOUT: "120"
+  hostPath:
+    frappeBench: /lms-helpdesk/frappe-bench
+    backup: /lms-helpdesk/backup
+    archive: /lms-helpdesk/archive
+    logs: /lms-helpdesk/logs
+redis:
+  image: docker.io/ngatiafrankline/ecampus:frappe-redis-v7
+  nodeSelector:
+    selectorKey: helpdesk
+    selectorValue: scheduled
+  storage:
+    hostPath: /redis-data
+  queue:
+    enabled: true # default: true
+    enablePassword: false # default: true
+    password: "queue123"
+    port: 1200
+    maxmemory: 2gb
+    appendonly: true
+  cache:
+    enabled: true # default: true
+    enablePassword: false # default: true
+    password: "cache123"
+    port: 1300
+    maxmemory: 1gb
+    appendonly: false
+rsync:
+  nodeSelector:
+    enabled: true
+    selector:
+      key: "helpdesk"
+      value: "scheduled"
+  containerVolume:
+    mountPath: /data
+    hostPath: /lms-helpdesk/backup
+    hostPathType: Directory
+  rsyncRemote:
+    RSYNC_REMOTE_USER: "dngatia"
+    RSYNC_REMOTE_HOST_ADDRESS: "197.136.12.72"
+    RSYNC_REMOTE_HOST_PORT: "1272"
+    RSYNC_REMOTE_DIR: "/mnt/UOE-File-System-NFS-01/lms-helpdesk/"
+    RSYNC_LOCAL_DIR: "/data/"
+    RSYNC_LOG_FILE: "/logs/rsync.log"
+    RSYNC_CRON_TIME: "0 */6 * * *"
+ingress:
+  hosts:
+    - ingressName: lms-helpdesk-ingress
+      issuerPrefix: lms-helpdesk-tls
+      backendService: ingress-svc
+      backendPort: 80
+      domain: help.lms.uoeld.ac.ke
+  acme:
+    staging: false
+    email: fngatia@uoeld.ac.ke
+    stagingServer: https://acme-staging-v02.api.letsencrypt.org/directory
+    liveServer: https://acme-v02.api.letsencrypt.org/directory

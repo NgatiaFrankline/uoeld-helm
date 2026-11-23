@@ -1,2 +1,3 @@
 image:
   redis: redis:7.2.4-alpine
+password: my-redis-complex-pass

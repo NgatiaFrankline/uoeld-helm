@@ -127,7 +127,12 @@ stringData:
   MONITOR_USER: "root"
   MONITOR_PASSWORD: "upom3MoJ3hxGCthj"
   MARIADB_SERVER_VERSION: "11.0.2-MariaDB-ubu2204"
-  SQL_USERS: "root:upom3MoJ3hxGCthj,fngatia:KxFgCBBEaS2B0Ugu,endowment_user:UxFgCBBEaS2B0Ugx"
+  SQL_USERS: >-
+    root:upom3MoJ3hxGCthj,
+    fngatia:KxFgCBBEaS2B0Ugu,
+    endowment_user:UxFgCBBEaS2B0Ugx,
+    support_db:HlNTiPlA6FUmrOer,
+    citycampus_user:JxFgCBBEaS2B0UgY
 ---
 apiVersion: v1
 kind: Service

@@ -12,6 +12,10 @@ wordpress:
     WORDPRESS_DB_USER: "endowment_user"
     WORDPRESS_DB_PASSWORD: "UxFgCBBEaS2B0Ugx"
     WORDPRESS_SERVICE_NODEPORT: "30018"
+  hostPaths:
+    WORDPRESS_WWW: "/wordpress/uoe-endowment/www"
+    WORDPRESS_BACKUP: "/wordpress/uoe-endowment/backup"
+    WORDPRESS_LOGS: "/wordpress/uoe-endowment/logs"
 rsync:
   nodeSelector:
     enabled: true
@@ -20,7 +24,7 @@ rsync:
       value: "uoeldwebsite"
   containerVolume:
     mountPath: /data
-    hostPath: /wordpress/uoe-endowment
+    hostPath: /wordpress/uoe-endowment/backup
     hostPathType: Directory
   rsyncRemote:
     RSYNC_REMOTE_USER: "dngatia"

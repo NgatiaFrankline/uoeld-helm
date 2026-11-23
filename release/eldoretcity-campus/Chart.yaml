@@ -1,0 +1,15 @@
+apiVersion: v2
+name: uoe-endowment
+description: A Helm chart for Kubernetes to deploy uo-endowment
+type: application
+version: 0.1.0
+dependencies:
+  - name: wordpress
+    version: 0.1.0
+    repository: file://../../repo/wordpress
+  - name: rsync
+    version: 0.1.0
+    repository: file://../../repo/rsync
+  - name: ingress
+    version: 0.1.0
+    repository: file://../../repo/ingress

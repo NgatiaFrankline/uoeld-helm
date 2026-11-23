@@ -1,9 +1,15 @@
 dependencies:
+- name: redis
+  repository: file://../../repo/redis
+  version: 0.1.0
 - name: rsync
   repository: file://../../repo/rsync
   version: 0.1.0
 - name: ingress
   repository: file://../../repo/ingress
   version: 0.1.0
-digest: sha256:3140450f175a787e3103e3241df324b7a474b10831945a68a1676ef8f0a4325d
-generated: "2026-08-14T12:41:24.395606219+03:00"
+- name: git-ssh
+  repository: file://../../repo/git-ssh
+  version: 0.1.0
+digest: sha256:5b9ae8787f0c183e98756d92821518a36dc241dbb44aca2c2a80b5bd3c72c0c3
+generated: "2026-10-30T21:53:12.620722073+03:00"
